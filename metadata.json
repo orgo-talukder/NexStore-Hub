@@ -1,0 +1,6 @@
+{
+  "name": "NexStore",
+  "description": "Enterprise-grade, premium official first-party application marketplace powered by Supabase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

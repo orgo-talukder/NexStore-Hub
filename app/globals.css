@@ -1,0 +1,91 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --color-cosmic-obsidian: #060911;
+  --color-deep-navy-glass: rgba(14, 22, 38, 0.85);
+  --color-deep-navy-solid: #0e1626;
+  --color-card-hover: #15223c;
+  --color-electric-blue: #3b82f6;
+  --color-cyber-purple: #8b5cf6;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-success-badge: #10b981;
+  --color-star-rating: #f59e0b;
+  --color-border-glass: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(59, 130, 246, 0.45);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-cosmic-obsidian);
+    color: var(--color-text-primary);
+    font-family: var(--font-inter), sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-outfit), sans-serif;
+  }
+}
+
+/* Hide scrollbars cross-browser for touch/carousels */
+.hide-scrollbar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+::-webkit-scrollbar.hide-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+}
+
+.hide-scrollbar,
+.no-scrollbar {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}
+
+/* Sleek dark mode scrollbar for desktop */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #060911;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
+  }
+}
+
+/* Hide desktop-style default scrollbars on mobile viewport */
+@media (max-width: 767px) {
+  ::-webkit-scrollbar {
+    display: none !important;
+    width: 0px !important;
+    height: 0px !important;
+  }
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+}
+
+.glass-panel {
+  background-color: var(--color-deep-navy-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border-glass);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
