@@ -12,11 +12,12 @@ import {
   Cpu, 
   Smartphone, 
   Copy,
-  Layers
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { DownloadButton } from '@/components/DownloadButton';
 import { useSavedApps } from '@/lib/savedStore';
-import { formatApkSize, type AppItem, type VersionItem } from '@/lib/supabase';
+import { formatApkSize, formatVersion, type AppItem, type VersionItem } from '@/lib/supabase';
 
 function formatArchitecture(arch?: string): string {
   if (!arch) return 'Universal (All ABIs)';
@@ -35,25 +36,38 @@ function getChannelBadge(channel?: string) {
     case 'beta':
       return {
         label: 'BETA',
-        className: 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.2)]',
+        className: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+        dotClass: 'bg-amber-400',
       };
     case 'alpha':
       return {
         label: 'ALPHA',
-        className: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40 shadow-[0_0_12px_rgba(217,70,239,0.2)]',
+        className: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30',
+        dotClass: 'bg-fuchsia-400',
       };
     case 'nightly':
       return {
         label: 'NIGHTLY',
-        className: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.2)]',
+        className: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+        dotClass: 'bg-cyan-400',
       };
     case 'stable':
     default:
       return {
         label: 'STABLE',
-        className: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.2)]',
+        className: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+        dotClass: 'bg-emerald-400',
       };
   }
+}
+
+function formatMinAndroidDisplay(minAndroid?: string): { version: string; full: string } {
+  if (!minAndroid) return { version: '8.0+', full: 'Android 8.0+' };
+  const cleaned = minAndroid.replace(/^android\s+/i, '').trim();
+  return {
+    version: cleaned || '8.0+',
+    full: `Android ${cleaned || '8.0+'}`,
+  };
 }
 
 export function AppHeroDetail({ 
@@ -72,9 +86,10 @@ export function AppHeroDetail({
 
   const effectiveChannel = latestVersion?.releaseChannel || app.releaseChannel || 'stable';
   const effectiveArch = latestVersion?.architecture || app.architecture || 'universal';
-  const effectiveMinAndroid = latestVersion?.minAndroidVersion || app.minAndroid || '8.0+';
+  const effectiveMinAndroid = latestVersion?.minAndroidVersion || app.minAndroid || 'Android 8.0+';
   const effectiveSize = latestVersion?.apkSizeDisplay || latestVersion?.apkSizeBytes || app.apkSize;
   const channelBadge = getChannelBadge(effectiveChannel);
+  const androidDisplay = formatMinAndroidDisplay(effectiveMinAndroid);
 
   const handleDownloadSuccess = (newCount?: number) => {
     if (typeof newCount === 'number') {
@@ -112,59 +127,88 @@ export function AppHeroDetail({
     }
   };
 
+  const cleanVersion = formatVersion(app.latestVersion);
+
   return (
-    <>
-      <div className="glass-panel rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 mb-8 sm:mb-12 relative overflow-hidden border border-border-glass">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-electric-blue/10 blur-[100px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyber-purple/10 blur-[100px] rounded-full pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col md:flex-row gap-6 sm:gap-8 items-center md:items-start text-center md:text-left">
-          {/* App Icon */}
-          <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-2xl sm:rounded-[28px] overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.6)] border border-border-glass shrink-0 bg-deep-navy-solid flex items-center justify-center relative group">
-            {!imgError && app.iconUrl ? (
-              <img 
-                src={app.iconUrl} 
-                alt={app.name} 
-                onError={() => setImgError(true)}
-                className="w-full h-full object-cover" 
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-electric-blue/15 text-electric-blue font-bold text-3xl sm:text-4xl font-outfit">
-                {app.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
+    <div className="relative rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-10 mb-8 sm:mb-10 overflow-hidden bg-gradient-to-b from-[#0e172e]/90 via-[#0a1022]/90 to-[#060913]/95 border border-white/[0.08] shadow-2xl backdrop-blur-xl">
+      {/* Ambient background glows */}
+      <div className="absolute top-0 right-0 w-72 sm:w-96 h-72 sm:h-96 bg-electric-blue/15 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-72 sm:w-96 h-72 sm:h-96 bg-cyber-purple/15 blur-[100px] rounded-full pointer-events-none" />
+      
+      <div className="relative z-10">
+        {/* Top Section: App Header on Mobile & Tablet */}
+        <div className="flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 items-start">
           
+          {/* App Header Row (Icon + Title Side-by-Side on Mobile) */}
+          <div className="flex items-center md:items-start gap-4 sm:gap-5 w-full md:w-auto">
+            {/* App Squircle Icon */}
+            <div className="w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 rounded-2xl sm:rounded-[24px] md:rounded-[28px] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-white/[0.12] shrink-0 bg-deep-navy-solid flex items-center justify-center relative p-0.5">
+              {!imgError && app.iconUrl ? (
+                <img 
+                  src={app.iconUrl} 
+                  alt={app.name} 
+                  onError={() => setImgError(true)}
+                  className="w-full h-full object-cover rounded-[inherit]" 
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-electric-blue/15 text-electric-blue font-bold text-2xl sm:text-3xl md:text-4xl font-outfit rounded-[inherit]">
+                  {app.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            {/* Title & Micro Meta on Mobile */}
+            <div className="flex-1 min-w-0 md:hidden">
+              <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                <span className="px-2 py-0.5 rounded-md bg-electric-blue/15 border border-electric-blue/30 text-electric-blue text-[10px] font-bold uppercase tracking-wider">
+                  {app.category}
+                </span>
+                <span className={`px-2 py-0.5 rounded-md border text-[10px] font-bold font-mono uppercase tracking-wider flex items-center gap-1 ${channelBadge.className}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${channelBadge.dotClass} animate-pulse`} />
+                  <span>{channelBadge.label}</span>
+                </span>
+              </div>
+
+              <h1 className="text-xl xs:text-2xl font-outfit font-bold text-white tracking-tight leading-tight truncate">
+                {app.name}
+              </h1>
+
+              <p className="text-xs text-text-muted mt-0.5 font-mono truncate">
+                {app.packageName || app.id}
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop/Tablet Title & Chips Area */}
           <div className="flex-1 min-w-0 w-full">
-            {/* Title & Badges Bar */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 mb-2.5">
-              <h1 className="text-2xl sm:text-3xl md:text-5xl font-outfit font-bold text-white tracking-tight">{app.name}</h1>
+            {/* Desktop Headline & Badges */}
+            <div className="hidden md:flex flex-wrap items-center gap-3 mb-2.5">
+              <h1 className="text-3xl lg:text-4xl font-outfit font-bold text-white tracking-tight">
+                {app.name}
+              </h1>
               
-              {/* Category Badge */}
-              <span className="px-2.5 py-1 rounded-full bg-electric-blue/10 border border-electric-blue/30 text-electric-blue text-[11px] sm:text-xs font-semibold uppercase tracking-wider">
+              <span className="px-3 py-1 rounded-full bg-electric-blue/15 border border-electric-blue/30 text-electric-blue text-xs font-semibold uppercase tracking-wider">
                 {app.category}
               </span>
 
-              {/* Prominent Release Channel Badge */}
-              <span className={`px-2.5 py-1 rounded-full border text-[11px] sm:text-xs font-bold font-mono uppercase tracking-wider flex items-center gap-1 shadow-sm ${channelBadge.className}`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+              <span className={`px-3 py-1 rounded-full border text-xs font-bold font-mono uppercase tracking-wider flex items-center gap-1.5 shadow-sm ${channelBadge.className}`}>
+                <span className={`w-2 h-2 rounded-full ${channelBadge.dotClass} animate-pulse`} />
                 <span>{channelBadge.label}</span>
               </span>
 
-              {/* Architecture Chip */}
-              <span className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-text-secondary text-[11px] sm:text-xs font-mono flex items-center gap-1">
-                <Cpu className="w-3 h-3 text-text-muted" />
+              <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-text-secondary text-xs font-mono flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-text-muted" />
                 <span>{formatArchitecture(effectiveArch)}</span>
               </span>
             </div>
 
-            {/* Subrow: Package Name & Security Badge */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-6 text-xs sm:text-sm text-text-secondary">
+            {/* Desktop / Tablet Sub-bar: Package ID & Security */}
+            <div className="hidden md:flex flex-wrap items-center gap-3 mb-6 text-xs text-text-secondary">
               <button
                 type="button"
                 onClick={handleCopyPackage}
                 title="Click to copy package ID"
-                className="font-mono bg-white/5 hover:bg-white/10 border border-white/10 px-2.5 py-1 rounded-lg text-text-muted hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+                className="font-mono bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-xl text-text-muted hover:text-white transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
               >
                 <span>{app.packageName || app.id}</span>
                 {copiedPkg ? (
@@ -174,112 +218,121 @@ export function AppHeroDetail({
                 )}
               </button>
 
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>VirusTotal Clean & Signed</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>VirusTotal Clean & Verified</span>
               </span>
             </div>
-            
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap items-center justify-center md:justify-start gap-4 sm:gap-6 md:gap-8 mb-8 p-3.5 sm:p-4 md:p-0 rounded-2xl bg-white/[0.02] sm:bg-white/[0.01] md:bg-transparent border border-white/5 md:border-0">
-              {/* Rating */}
-              <div className="flex flex-col items-center md:items-start">
-                <span className="text-text-muted text-[11px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">Rating</span>
-                <div className="flex items-center gap-1.5">
-                  <Star className="w-4 h-4 sm:w-5 sm:h-5 text-star-rating fill-star-rating" />
-                  <span className="text-white font-bold text-lg sm:text-xl">{app.rating}</span>
+
+            {/* Mobile / Tablet Chips Bar (Clean wrapped badges, zero overflow) */}
+            <div className="flex md:hidden flex-wrap items-center gap-1.5 xs:gap-2 mb-3.5">
+              <button
+                type="button"
+                onClick={handleCopyPackage}
+                className="max-w-[170px] xs:max-w-[210px] font-mono text-[11px] bg-white/5 border border-white/10 px-2 py-1 rounded-lg text-text-muted flex items-center gap-1 active:scale-95 transition-all"
+              >
+                <span className="truncate">{app.packageName || app.id}</span>
+                {copiedPkg ? <Check className="w-3 h-3 text-emerald-400 shrink-0" /> : <Copy className="w-3 h-3 opacity-60 shrink-0" />}
+              </button>
+
+              <span className="text-[11px] font-mono bg-white/5 border border-white/10 text-text-secondary px-2 py-1 rounded-lg flex items-center gap-1">
+                <Cpu className="w-3 h-3 text-text-muted shrink-0" />
+                <span>{formatArchitecture(effectiveArch)}</span>
+              </span>
+
+              <span className="text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-1 rounded-lg flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />
+                <span>Safe</span>
+              </span>
+
+              <span className="text-[11px] text-text-muted bg-white/5 border border-white/10 px-2 py-1 rounded-lg flex items-center gap-1">
+                <Smartphone className="w-3 h-3 text-text-muted shrink-0" />
+                <span>{androidDisplay.full}</span>
+              </span>
+            </div>
+
+            {/* App Store Style 4-Column Stat Box (Zero Overflow Guarantee) */}
+            <div className="bg-[#070b16]/80 border border-white/[0.08] rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 mb-4 sm:mb-6 w-full">
+              <div className="grid grid-cols-4 divide-x divide-white/[0.08] text-center">
+                
+                {/* 1. Rating */}
+                <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
+                  <div className="flex items-center justify-center gap-0.5 sm:gap-1 text-white font-bold text-sm sm:text-base md:text-lg">
+                    <span>{app.rating}</span>
+                    <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-star-rating fill-star-rating shrink-0" />
+                  </div>
+                  <span className="text-[9px] sm:text-[11px] text-text-muted uppercase tracking-wider font-medium mt-0.5">Rating</span>
                 </div>
-              </div>
 
-              <div className="w-px h-10 bg-border-glass hidden md:block" />
-
-              {/* Downloads */}
-              <div className="flex flex-col items-center md:items-start">
-                <span className="text-text-muted text-[11px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">Downloads</span>
-                <div className="flex items-center gap-1.5">
-                  <Download className="w-4 h-4 text-electric-blue" />
-                  <span className="text-white font-bold text-lg sm:text-xl">{downloadCount.toLocaleString()}</span>
+                {/* 2. Downloads */}
+                <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
+                  <div className="flex items-center justify-center gap-0.5 sm:gap-1 text-white font-bold text-sm sm:text-base md:text-lg font-outfit">
+                    <span>{downloadCount > 999 ? `${(downloadCount / 1000).toFixed(1)}k` : downloadCount}</span>
+                    <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-electric-blue shrink-0" />
+                  </div>
+                  <span className="text-[9px] sm:text-[11px] text-text-muted uppercase tracking-wider font-medium mt-0.5">Downloads</span>
                 </div>
-              </div>
 
-              <div className="w-px h-10 bg-border-glass hidden md:block" />
-
-              {/* Size */}
-              <div className="flex flex-col items-center md:items-start">
-                <span className="text-text-muted text-[11px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">Size</span>
-                <div className="flex items-center gap-1.5">
-                  <HardDrive className="w-4 h-4 text-cyber-purple" />
-                  <span className="text-white font-bold text-lg sm:text-xl">{formatApkSize(effectiveSize)}</span>
+                {/* 3. Size */}
+                <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
+                  <div className="text-white font-bold text-xs xs:text-sm sm:text-base md:text-lg font-outfit truncate max-w-full">
+                    {formatApkSize(effectiveSize)}
+                  </div>
+                  <span className="text-[9px] sm:text-[11px] text-text-muted uppercase tracking-wider font-medium mt-0.5">Size</span>
                 </div>
-              </div>
 
-              <div className="w-px h-10 bg-border-glass hidden md:block" />
-
-              {/* Version */}
-              <div className="flex flex-col items-center md:items-start">
-                <span className="text-text-muted text-[11px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">Version</span>
-                <span className="text-white font-bold text-lg sm:text-xl font-mono">
-                  {app.latestVersion.startsWith('v') || app.latestVersion.startsWith('V') ? app.latestVersion : `v${app.latestVersion}`}
-                </span>
-              </div>
-
-              <div className="w-px h-10 bg-border-glass hidden md:block" />
-
-              {/* Channel */}
-              <div className="flex flex-col items-center md:items-start">
-                <span className="text-text-muted text-[11px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">Channel</span>
-                <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border mt-0.5 ${channelBadge.className}`}>
-                  {channelBadge.label}
-                </span>
-              </div>
-
-              <div className="w-px h-10 bg-border-glass hidden md:block" />
-
-              {/* Min Android */}
-              <div className="flex flex-col items-center md:items-start">
-                <span className="text-text-muted text-[11px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">Requires</span>
-                <div className="flex items-center gap-1 text-white font-bold text-sm sm:text-base mt-0.5">
-                  <Smartphone className="w-4 h-4 text-text-muted" />
-                  <span>Android {effectiveMinAndroid}</span>
+                {/* 4. Version */}
+                <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
+                  <div className="text-white font-bold text-xs xs:text-sm sm:text-base md:text-lg font-mono truncate max-w-full" title={cleanVersion}>
+                    {cleanVersion}
+                  </div>
+                  <span className="text-[9px] sm:text-[11px] text-text-muted uppercase tracking-wider font-medium mt-0.5">Version</span>
                 </div>
+
               </div>
             </div>
-            
-            {/* Primary Action Buttons */}
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-              <DownloadButton 
-                appId={app.id} 
-                downloadUrl={latestVersion?.apkUrl || app.apkUrl} 
-                onDownloadComplete={handleDownloadSuccess}
-              />
 
+            {/* Action Bar: Download Button + Save + Share */}
+            <div className="flex items-center gap-2.5 sm:gap-3 w-full">
+              <div className="flex-1 min-w-0">
+                <DownloadButton 
+                  appId={app.id} 
+                  downloadUrl={latestVersion?.apkUrl || app.apkUrl} 
+                  onDownloadComplete={handleDownloadSuccess}
+                />
+              </div>
+
+              {/* Bookmark Button */}
               <button
                 type="button"
                 onClick={() => toggleSave(app.id)}
                 aria-label={saved ? 'Remove from saved' : 'Save to library'}
-                className={`inline-flex items-center gap-2 px-4 sm:px-5 py-3.5 rounded-xl sm:rounded-2xl border text-sm font-semibold transition-all duration-300 active:scale-95 shadow-md cursor-pointer ${
+                className={`p-3.5 sm:px-4 sm:py-3.5 rounded-xl sm:rounded-2xl border text-sm font-semibold transition-all duration-200 active:scale-90 shadow-md shrink-0 flex items-center justify-center gap-1.5 cursor-pointer ${
                   saved
                     ? 'bg-cyber-purple/20 border-cyber-purple text-cyber-purple'
-                    : 'bg-card-bg/90 border-border-glass text-text-secondary hover:text-white hover:border-electric-blue/40'
+                    : 'bg-[#0d152a] border-white/[0.1] text-text-secondary hover:text-white hover:border-electric-blue/40'
                 }`}
               >
-                <Bookmark className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
-                <span>{saved ? 'Saved' : 'Save'}</span>
+                <Bookmark className={`w-5 h-5 ${saved ? 'fill-current' : ''}`} />
+                <span className="hidden sm:inline">{saved ? 'Saved' : 'Save'}</span>
               </button>
 
+              {/* Share Button */}
               <button
                 type="button"
                 onClick={handleShare}
                 aria-label="Share app"
-                className="inline-flex items-center gap-2 px-4 py-3.5 rounded-xl sm:rounded-2xl border border-border-glass bg-card-bg/90 text-text-secondary hover:text-white hover:border-electric-blue/40 text-sm font-semibold transition-all duration-300 active:scale-95 shadow-md cursor-pointer"
+                className="p-3.5 sm:px-4 sm:py-3.5 rounded-xl sm:rounded-2xl border border-white/[0.1] bg-[#0d152a] text-text-secondary hover:text-white hover:border-electric-blue/40 text-sm font-semibold transition-all duration-200 active:scale-90 shadow-md shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                {copiedShare ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
-                <span>{copiedShare ? 'Copied' : 'Share'}</span>
+                {copiedShare ? <Check className="w-5 h-5 text-emerald-400" /> : <Share2 className="w-5 h-5" />}
+                <span className="hidden sm:inline">{copiedShare ? 'Copied' : 'Share'}</span>
               </button>
             </div>
+
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
+

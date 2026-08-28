@@ -476,10 +476,10 @@ function MobileSquircleAppCard({ app }: { app: AppItem }) {
   return (
     <Link
       href={`/app/${app.slug || app.id}`}
-      className="flex flex-col items-center text-center group active:scale-95 transition-transform"
+      className="flex flex-col items-center text-center group active:scale-90 transition-transform duration-150"
     >
       {/* App Squircle Icon */}
-      <div className="w-[72px] h-[72px] rounded-2xl overflow-hidden bg-[#0d1633] border border-white/[0.12] shadow-lg flex items-center justify-center p-0.5 relative group-hover:border-electric-blue/50 transition-colors">
+      <div className="w-16 h-16 xs:w-[70px] xs:h-[70px] sm:w-[76px] sm:h-[76px] rounded-2xl overflow-hidden bg-[#0d1633] border border-white/[0.12] shadow-lg flex items-center justify-center p-0.5 relative group-hover:border-electric-blue/50 group-hover:shadow-electric-blue/20 transition-all">
         {!imgError && app.iconUrl ? (
           <img
             src={app.iconUrl}
@@ -495,12 +495,12 @@ function MobileSquircleAppCard({ app }: { app: AppItem }) {
       </div>
 
       {/* App Title */}
-      <span className="text-xs font-semibold text-white mt-1.5 truncate max-w-[76px] leading-tight group-hover:text-electric-blue transition-colors">
+      <span className="text-xs font-semibold text-white mt-1.5 truncate max-w-[80px] leading-tight group-hover:text-electric-blue transition-colors">
         {app.name}
       </span>
 
       {/* Category Subtitle */}
-      <span className="text-[10px] text-text-muted truncate max-w-[76px] leading-none mt-0.5 capitalize">
+      <span className="text-[10px] text-text-muted truncate max-w-[80px] leading-none mt-0.5 capitalize">
         {app.category ? app.category.replace(/-/g, ' ') : 'General'}
       </span>
     </Link>

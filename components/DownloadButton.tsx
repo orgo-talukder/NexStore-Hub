@@ -71,10 +71,10 @@ export function DownloadButton({
   };
 
   const defaultClasses = size === 'sm'
-    ? 'text-xs px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 transition-all shadow-md bg-gradient-to-r from-electric-blue to-cyber-purple text-white shadow-electric-blue/20 hover:opacity-90 cursor-pointer'
-    : 'w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-electric-blue to-cyber-purple hover:from-blue-500 hover:to-purple-500 text-white font-bold text-lg px-10 py-4 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all disabled:opacity-80 cursor-pointer';
+    ? 'text-xs px-3.5 py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all shadow-md bg-gradient-to-r from-electric-blue to-cyber-purple text-white shadow-electric-blue/20 hover:opacity-90 cursor-pointer active:scale-95'
+    : 'w-full flex items-center justify-center gap-2.5 bg-gradient-to-r from-electric-blue via-blue-600 to-cyber-purple hover:from-blue-500 hover:to-purple-500 text-white font-bold text-sm sm:text-base md:text-lg px-5 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all disabled:opacity-80 cursor-pointer active:scale-95';
 
-  const iconSize = size === 'sm' ? 'w-3.5 h-3.5' : 'w-6 h-6';
+  const iconSize = size === 'sm' ? 'w-3.5 h-3.5' : 'w-5 h-5 sm:w-6 sm:h-6';
 
   return (
     <motion.button

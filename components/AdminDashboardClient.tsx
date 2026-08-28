@@ -17,6 +17,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import type { AppItem, BannerItem, CategoryItem } from '@/lib/supabase';
+import { formatVersion } from '@/lib/supabase';
 
 export function AdminDashboardClient({
   initialApps,
@@ -224,7 +225,7 @@ export function AdminDashboardClient({
 
                     <td className="py-3.5 px-4 text-text-secondary">
                       <div className="flex items-center gap-1 font-mono text-xs">
-                        <span>v{app.latestVersion}</span>
+                        <span>{formatVersion(app.latestVersion)}</span>
                         <span className="text-text-muted">• {app.apkSize || 'N/A'}</span>
                       </div>
                     </td>

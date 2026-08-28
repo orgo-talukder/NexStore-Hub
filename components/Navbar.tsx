@@ -111,15 +111,15 @@ export function Navbar() {
               </Link>
             </div>
             
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
+            {/* Desktop & Tablet Navigation */}
+            <nav className="hidden md:flex items-center space-x-3 lg:space-x-6 xl:space-x-8">
               {navLinks.map((link) => {
                 const isActive = pathname === link.path || (link.path !== '/' && pathname?.startsWith(link.path));
                 return (
                   <Link
                     key={link.name}
                     href={link.path}
-                    className={`relative text-sm font-medium transition-colors hover:text-white py-2 flex items-center gap-1.5 ${
+                    className={`relative text-xs lg:text-sm font-medium transition-colors hover:text-white py-2 flex items-center gap-1.5 ${
                       isActive ? 'text-white font-semibold' : 'text-text-secondary'
                     }`}
                   >
@@ -137,18 +137,18 @@ export function Navbar() {
               })}
             </nav>
 
-            {/* Desktop Smart Search Autocomplete */}
-            <div className="hidden md:flex items-center">
+            {/* Smart Search Dropdown (Tablet & Desktop) */}
+            <div className="hidden sm:flex items-center">
               <SmartSearchDropdown />
             </div>
 
-            {/* Mobile Actions (Search + Menu on Right) */}
-            <div className="md:hidden flex items-center gap-2">
+            {/* Mobile Actions (Search + Menu on Mobile) */}
+            <div className="flex md:hidden items-center gap-2">
               <button 
                 type="button"
                 aria-label="Toggle search"
                 onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-                className="p-2 rounded-xl bg-card-bg border border-border-glass text-text-secondary hover:text-white focus:outline-none"
+                className="p-2.5 rounded-xl bg-card-bg border border-border-glass text-text-secondary hover:text-white active:scale-95 transition-all focus:outline-none"
               >
                 {isMobileSearchOpen ? (
                   <X className="h-5 w-5 text-white" />
@@ -161,7 +161,7 @@ export function Navbar() {
                 type="button"
                 aria-label="Open navigation sidebar"
                 onClick={() => setIsSidebarOpen(true)}
-                className="relative p-2 rounded-xl bg-card-bg border border-border-glass text-text-secondary hover:text-white hover:border-electric-blue/40 transition-colors focus:outline-none"
+                className="relative p-2.5 rounded-xl bg-card-bg border border-border-glass text-text-secondary hover:text-white hover:border-electric-blue/40 active:scale-95 transition-all focus:outline-none"
               >
                 <Menu className="h-5 w-5 text-white" />
                 {savedCount > 0 && (

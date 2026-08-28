@@ -120,15 +120,15 @@ export function formatApkSize(
   }
 
   if (rawSize === undefined || rawSize === null || rawSize === '') {
-    return '25 MB';
+    return 'APK';
   }
 
   const str = String(rawSize).trim();
   if (!str || str === 'null' || str === 'undefined' || str === '0') {
-    return '25 MB';
+    return 'APK';
   }
 
-  // If already has unit e.g. "29 MB", "29MB", "150 KB", "1.2 GB"
+  // If already has unit e.g. "29 MB", "29.9 MB", "150 KB", "1.2 GB"
   const unitMatch = str.match(/^([\d.,]+)\s*([a-zA-Z]+)$/);
   if (unitMatch) {
     const num = unitMatch[1];
@@ -141,7 +141,7 @@ export function formatApkSize(
   // If it's a pure number or numeric string (e.g. 29, "29", "29.5")
   const numVal = parseFloat(str.replace(/,/g, ''));
   if (!isNaN(numVal)) {
-    // If explicit unit was passed separately (e.g. from admin panel: size: 29, unit: "MB")
+    // If explicit unit was passed separately (e.g. from admin panel: size: 29.9, unit: "MB")
     if (rawUnit && typeof rawUnit === 'string' && rawUnit.trim()) {
       const u = rawUnit.trim().toUpperCase();
       return `${numVal} ${u}`;
@@ -167,9 +167,13 @@ export function formatApkSize(
 
 /**
  * Normalizes raw Supabase row data to consistent camelCase types
- * handles both snake_case columns (standard in Supabase) and camelCase
+ * handles both snake_case columns (standard in Supabase) and camelCase,
+ * and enriches with real latest version data from app_versions
  */
-export function normalizeApp(raw: Record<string, unknown>): AppItem {
+export function normalizeApp(
+  raw: Record<string, unknown>,
+  latestVersion?: VersionItem
+): AppItem {
   if (!raw) return {} as AppItem;
 
   const parseArray = (val: unknown): string[] => {
@@ -185,10 +189,66 @@ export function normalizeApp(raw: Record<string, unknown>): AppItem {
     return [];
   };
 
-  const rawSize = raw.apk_size || raw.apkSize || raw.size || raw.file_size;
-  const rawUnit = raw.apk_size_unit || raw.apkSizeUnit || raw.size_unit || raw.sizeUnit || raw.unit || raw.file_size_unit;
-  const rawBytes = raw.apk_size_bytes || raw.apkSizeBytes;
+  // Real APK size resolution: Prefer latestVersion from app_versions, then raw app columns
+  const rawSize = 
+    latestVersion?.apkSizeDisplay || 
+    raw.apk_size_display || 
+    raw.apkSizeDisplay || 
+    raw.apk_size || 
+    raw.apkSize || 
+    raw.size || 
+    raw.file_size;
+
+  const rawUnit = 
+    raw.apk_size_unit || 
+    raw.apkSizeUnit || 
+    raw.size_unit || 
+    raw.sizeUnit || 
+    raw.unit || 
+    raw.file_size_unit;
+
+  const rawBytes = 
+    latestVersion?.apkSizeBytes || 
+    raw.apk_size_bytes || 
+    raw.apkSizeBytes;
+
   const formattedApkSize = formatApkSize(rawSize, rawUnit, rawBytes);
+
+  // Version resolution: Prefer version from app_versions
+  const rawVer = 
+    latestVersion?.versionName || 
+    (raw.latest_version as string) || 
+    (raw.latestVersion as string) || 
+    (raw.version_name as string) || 
+    (raw.version as string) || 
+    '1.0.0';
+  const cleanVer = cleanVersionNumber(rawVer);
+
+  // Channel resolution
+  const rawChannel = 
+    latestVersion?.releaseChannel || 
+    (raw.release_channel as string) || 
+    (raw.releaseChannel as string) || 
+    (raw.channel as string) || 
+    'stable';
+
+  // Architecture resolution
+  const rawArch = 
+    latestVersion?.architecture || 
+    (raw.architecture as string) || 
+    (raw.arch as string) || 
+    'universal';
+
+  // APK URL resolution
+  const apkUrl = 
+    (latestVersion?.apkUrl && latestVersion.apkUrl !== '#') 
+      ? latestVersion.apkUrl 
+      : String(raw.apk_url || raw.apkUrl || raw.download_url || '#');
+
+  // Min Android resolution
+  const minAndroid = 
+    latestVersion?.minAndroidVersion || 
+    String(raw.min_android || raw.minAndroid || raw.min_android_version || 'Android 8.0+');
 
   return {
     id: String(raw.id || ''),
@@ -200,7 +260,7 @@ export function normalizeApp(raw: Record<string, unknown>): AppItem {
     description: String(raw.description || raw.short_description || ''),
     features: parseArray(raw.features),
     keywords: parseArray(raw.keywords),
-    minAndroid: String(raw.min_android || raw.minAndroid || 'Android 8.0+'),
+    minAndroid,
     targetAndroid: String(raw.target_android || raw.targetAndroid || 'Android 14'),
     permissions: parseArray(raw.permissions),
     iconUrl: String(raw.icon_url || raw.iconUrl || raw.icon || 'https://picsum.photos/seed/appicon/200/200'),
@@ -209,11 +269,11 @@ export function normalizeApp(raw: Record<string, unknown>): AppItem {
     screenshots: parseArray(raw.screenshots),
     rating: raw.rating !== undefined && raw.rating !== null ? String(raw.rating) : '5.0',
     downloads: Number(raw.downloads || 0),
-    latestVersion: String(raw.latest_version || raw.latestVersion || raw.version || '1.0.0'),
-    releaseChannel: (raw.release_channel as string) || (raw.releaseChannel as string) || (raw.channel as string) || undefined,
-    architecture: (raw.architecture as string) || (raw.arch as string) || undefined,
+    latestVersion: cleanVer,
+    releaseChannel: rawChannel,
+    architecture: rawArch,
     apkSize: formattedApkSize,
-    apkUrl: String(raw.apk_url || raw.apkUrl || '#'),
+    apkUrl,
     featured: Boolean(raw.featured ?? false),
     published: Boolean(raw.published ?? true),
     createdAt: String(raw.created_at || raw.createdAt || new Date().toISOString()),
@@ -273,7 +333,7 @@ export function normalizeVersion(raw: Record<string, unknown>): VersionItem {
   return {
     id: String(raw.id || ''),
     appId: String(raw.app_id || raw.appId || ''),
-    versionName: vName.startsWith('v') || vName.startsWith('V') ? vName : `v${vName}`,
+    versionName: formatVersion(vName),
     versionCode: (raw.version_code as string | number) || (raw.versionCode as string | number) || 1,
     apkUrl: String(raw.apk_url || raw.apkUrl || '#'),
     apkSizeBytes: sizeBytes,
@@ -303,7 +363,7 @@ interface CacheEntry<T> {
 }
 
 const memoryCache = new Map<string, CacheEntry<unknown>>();
-const DEFAULT_TTL_MS = 5 * 1000; // 5 seconds cache for real-time responsiveness
+const DEFAULT_TTL_MS = 45 * 1000; // 45 seconds cache for blazing fast responses
 
 async function cachedFetch<T>(
   key: string,
@@ -438,9 +498,59 @@ export async function getAppsByCategory(category: string, limit = 6): Promise<Ap
 }
 
 /**
+ * Helper to fetch a map of the latest version for each app from app_versions / versions
+ */
+export async function fetchLatestVersionsMap(): Promise<Record<string, VersionItem>> {
+  try {
+    const { data: versData } = await supabase
+      .from('app_versions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    const map: Record<string, VersionItem> = {};
+    if (versData && Array.isArray(versData)) {
+      for (const raw of versData) {
+        const appId = String(raw.app_id || raw.appId || '').trim();
+        if (!appId) continue;
+        const norm = normalizeVersion(raw);
+        const current = map[appId];
+        if (!current) {
+          map[appId] = norm;
+        } else if (norm.isLatest || (norm.status === 'published' && current.status !== 'published')) {
+          map[appId] = norm;
+        }
+      }
+      return map;
+    }
+
+    // Fallback: check legacy 'versions' table
+    const { data: legData } = await supabase
+      .from('versions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (legData && Array.isArray(legData)) {
+      for (const raw of legData) {
+        const appId = String(raw.app_id || raw.appId || '').trim();
+        if (!appId) continue;
+        const norm = normalizeVersion(raw);
+        if (!map[appId]) {
+          map[appId] = norm;
+        }
+      }
+    }
+    return map;
+  } catch (err) {
+    console.error('Error fetching latest versions map:', err);
+    return {};
+  }
+}
+
+/**
  * Helper to check if a raw app record is publicly visible
  */
-function isAppVisible(raw: Record<string, unknown>): boolean {
+export function isAppVisible(raw: Record<string, unknown>): boolean {
+  if (!raw) return false;
   if (raw.published === false || raw.is_published === false) {
     return false;
   }
@@ -457,17 +567,26 @@ function isAppVisible(raw: Record<string, unknown>): boolean {
 export async function getAllPublishedApps(): Promise<AppItem[]> {
   return cachedFetch('apps:published:all', async () => {
     try {
-      const { data, error } = await supabase
-        .from('apps')
-        .select('*')
-        .order('downloads', { ascending: false });
+      const [{ data, error }, versionsMap] = await Promise.all([
+        supabase
+          .from('apps')
+          .select('*')
+          .order('downloads', { ascending: false }),
+        fetchLatestVersionsMap(),
+      ]);
 
       if (error) {
         console.error('Supabase getAllPublishedApps error:', error.message);
         return [];
       }
       const visibleData = (data || []).filter(isAppVisible);
-      return visibleData.map(normalizeApp);
+      return visibleData.map((raw) => {
+        const appId = String(raw.id || '').trim();
+        const slug = String(raw.slug || '').trim();
+        const pkg = String(raw.package_name || raw.packageName || '').trim();
+        const latestVer = versionsMap[appId] || versionsMap[slug] || versionsMap[pkg];
+        return normalizeApp(raw, latestVer);
+      });
     } catch (err) {
       console.error('Error in getAllPublishedApps:', err);
       return [];
@@ -572,14 +691,23 @@ export async function getAllApps({
       query = query.order('downloads', { ascending: false });
     }
 
-    const { data, error } = await query;
+    const [{ data, error }, versionsMap] = await Promise.all([
+      query,
+      fetchLatestVersionsMap(),
+    ]);
 
     if (error) {
       console.error('Supabase getAllApps error:', error.message);
       return [];
     }
     const visible = (data || []).filter(isAppVisible);
-    return visible.map(normalizeApp);
+    return visible.map((raw) => {
+      const appId = String(raw.id || '').trim();
+      const slug = String(raw.slug || '').trim();
+      const pkg = String(raw.package_name || raw.packageName || '').trim();
+      const latestVer = versionsMap[appId] || versionsMap[slug] || versionsMap[pkg];
+      return normalizeApp(raw, latestVer);
+    });
   } catch (err) {
     console.error('Error in getAllApps:', err);
     return [];
@@ -611,22 +739,32 @@ export async function getAppBySlugOrId(idOrSlug: string): Promise<AppItem | null
         .eq('slug', idOrSlug)
         .limit(1);
 
+      let appRaw: Record<string, unknown> | null = null;
+
       if (slugData && slugData.length > 0 && isAppVisible(slugData[0])) {
-        return normalizeApp(slugData[0]);
+        appRaw = slugData[0];
+      } else {
+        // Try id or package_name
+        const { data: idData, error } = await supabase
+          .from('apps')
+          .select('*')
+          .or(`id.eq.${idOrSlug},package_name.eq.${idOrSlug}`)
+          .limit(1);
+
+        if (!error && idData && idData.length > 0 && isAppVisible(idData[0])) {
+          appRaw = idData[0];
+        }
       }
 
-      // Try id or package_name
-      const { data: idData, error } = await supabase
-        .from('apps')
-        .select('*')
-        .or(`id.eq.${idOrSlug},package_name.eq.${idOrSlug}`)
-        .limit(1);
-
-      if (error || !idData || idData.length === 0 || !isAppVisible(idData[0])) {
+      if (!appRaw) {
         return null;
       }
 
-      return normalizeApp(idData[0]);
+      const appId = String(appRaw.id || idOrSlug);
+      const vers = await getAppVersions(appId);
+      const latestVer = vers && vers.length > 0 ? vers[0] : undefined;
+
+      return normalizeApp(appRaw, latestVer);
     } catch (err) {
       console.error('Error in getAppBySlugOrId:', err);
       return null;
@@ -777,3 +915,182 @@ export async function getCategoriesWithCounts(): Promise<CategoryItem[]> {
     return [];
   }
 }
+
+/**
+ * Standardize version string format to always have exactly one leading 'v' (e.g. 'v1.0.0')
+ * Prevents double 'v' bugs like 'vv1.0'.
+ */
+export function formatVersion(version?: string | null): string {
+  if (!version) return 'v1.0';
+  const trimmed = String(version).trim().replace(/^[vV]+/g, '');
+  return trimmed ? `v${trimmed}` : 'v1.0';
+}
+
+/**
+ * Clean version string without leading 'v' (e.g. '1.0.0')
+ */
+export function cleanVersionNumber(version?: string | null): string {
+  if (!version) return '1.0';
+  return String(version).trim().replace(/^[vV]+/g, '') || '1.0';
+}
+
+export interface ReviewItem {
+  id: string;
+  appId: string;
+  userName: string;
+  rating: number;
+  title?: string;
+  comment: string;
+  deviceModel?: string;
+  verifiedDownload?: boolean;
+  helpfulCount: number;
+  createdAt: string;
+}
+
+/**
+ * Fetch real user reviews for an app from Supabase
+ */
+export async function fetchAppReviewsFromSupabase(appId: string): Promise<ReviewItem[]> {
+  if (!appId) return [];
+
+  try {
+    // 1. Try 'app_reviews' table
+    const { data: revData, error: revErr } = await supabase
+      .from('app_reviews')
+      .select('*')
+      .eq('app_id', appId)
+      .order('created_at', { ascending: false });
+
+    if (!revErr && revData && Array.isArray(revData)) {
+      return revData.map((r) => ({
+        id: String(r.id),
+        appId: String(r.app_id || appId),
+        userName: String(r.user_name || r.userName || r.author || 'Anonymous User'),
+        rating: Number(r.rating || 5),
+        title: r.title ? String(r.title) : undefined,
+        comment: String(r.comment || r.content || ''),
+        deviceModel: r.device_model || r.deviceModel || undefined,
+        verifiedDownload: Boolean(r.verified_download ?? r.verifiedDownload ?? true),
+        helpfulCount: Number(r.helpful_count || r.helpfulCount || 0),
+        createdAt: String(r.created_at || r.createdAt || new Date().toISOString()),
+      }));
+    }
+
+    // 2. Fallback: try 'reviews' table
+    const { data: legacyData, error: legacyErr } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('app_id', appId)
+      .order('created_at', { ascending: false });
+
+    if (!legacyErr && legacyData && Array.isArray(legacyData)) {
+      return legacyData.map((r) => ({
+        id: String(r.id),
+        appId: String(r.app_id || appId),
+        userName: String(r.user_name || r.userName || r.author || 'Anonymous User'),
+        rating: Number(r.rating || 5),
+        title: r.title ? String(r.title) : undefined,
+        comment: String(r.comment || r.content || ''),
+        deviceModel: r.device_model || r.deviceModel || undefined,
+        verifiedDownload: Boolean(r.verified_download ?? r.verifiedDownload ?? true),
+        helpfulCount: Number(r.helpful_count || r.helpfulCount || 0),
+        createdAt: String(r.created_at || r.createdAt || new Date().toISOString()),
+      }));
+    }
+
+    return [];
+  } catch (err) {
+    console.error('Error fetching reviews from Supabase:', err);
+    return [];
+  }
+}
+
+/**
+ * Inserts a new review into Supabase and updates the app's real average rating
+ */
+export async function submitAppReviewToSupabase(review: {
+  appId: string;
+  userName: string;
+  rating: number;
+  title?: string;
+  comment: string;
+  deviceModel?: string;
+  verifiedDownload?: boolean;
+}): Promise<{ success: boolean; newAverageRating?: string; totalCount?: number; review?: ReviewItem }> {
+  try {
+    const row = {
+      app_id: review.appId,
+      user_name: review.userName,
+      rating: Math.min(5, Math.max(1, review.rating)),
+      title: review.title || `${review.rating} Star Review`,
+      comment: review.comment,
+      device_model: review.deviceModel || 'Android Device',
+      verified_download: review.verifiedDownload ?? true,
+      helpful_count: 0,
+      created_at: new Date().toISOString(),
+    };
+
+    // 1. Insert into app_reviews or reviews
+    let insertResult = await supabase.from('app_reviews').insert([row]).select('*').single();
+    if (insertResult.error) {
+      // Fallback to 'reviews' table
+      insertResult = await supabase.from('reviews').insert([row]).select('*').single();
+    }
+
+    // 2. Fetch all reviews to recalculate exact rating
+    const allReviews = await fetchAppReviewsFromSupabase(review.appId);
+    let avg = '5.0';
+    if (allReviews.length > 0) {
+      const sum = allReviews.reduce((acc, r) => acc + r.rating, 0);
+      avg = (sum / allReviews.length).toFixed(1);
+    } else {
+      avg = Number(review.rating).toFixed(1);
+    }
+
+    // 3. Update apps table rating column with real arithmetic rating
+    await supabase
+      .from('apps')
+      .update({ rating: avg })
+      .eq('id', review.appId);
+
+    // 4. Invalidate relevant caches
+    invalidateCache('apps:');
+    invalidateCache('home:');
+    invalidateCache(`app:${review.appId}`);
+
+    const createdReview: ReviewItem = insertResult.data ? {
+      id: String(insertResult.data.id),
+      appId: review.appId,
+      userName: review.userName,
+      rating: review.rating,
+      title: review.title,
+      comment: review.comment,
+      deviceModel: review.deviceModel,
+      verifiedDownload: true,
+      helpfulCount: 0,
+      createdAt: new Date().toISOString(),
+    } : {
+      id: `rev-${Date.now()}`,
+      appId: review.appId,
+      userName: review.userName,
+      rating: review.rating,
+      title: review.title,
+      comment: review.comment,
+      deviceModel: review.deviceModel,
+      verifiedDownload: true,
+      helpfulCount: 0,
+      createdAt: new Date().toISOString(),
+    };
+
+    return {
+      success: true,
+      newAverageRating: avg,
+      totalCount: allReviews.length > 0 ? allReviews.length : 1,
+      review: createdReview,
+    };
+  } catch (err) {
+    console.error('Error submitting review to Supabase:', err);
+    return { success: false };
+  }
+}
+

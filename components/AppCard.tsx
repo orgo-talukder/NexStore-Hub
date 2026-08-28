@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Star, CheckCircle, ArrowRight, Download, HardDrive } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { AppItem } from '@/lib/supabase';
+import { formatVersion, type AppItem } from '@/lib/supabase';
 import { useState } from 'react';
 
 interface AppCardProps {
@@ -102,7 +102,7 @@ export function AppCard({ app, rankBadge, featured }: AppCardProps) {
               )}
               {app.latestVersion && (
                 <span className="text-[11px] text-text-muted font-mono bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
-                  v{app.latestVersion.replace(/^v/i, '')}
+                  {formatVersion(app.latestVersion)}
                 </span>
               )}
             </div>

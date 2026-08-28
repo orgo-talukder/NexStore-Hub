@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { fetchAppReviewsFromSupabase, type ReviewItem } from '@/lib/supabase';
+import { submitAppReviewAction } from '@/app/actions';
 
 export interface UserReview {
   id: string;
@@ -18,7 +20,7 @@ export interface UserReview {
 const DEFAULT_REVIEWS: Record<string, UserReview[]> = {
   default: [
     {
-      id: 'rev-1',
+      id: 'rev-seed-1',
       appId: 'default',
       userName: 'Tanjim Ahmed',
       rating: 5,
@@ -30,7 +32,7 @@ const DEFAULT_REVIEWS: Record<string, UserReview[]> = {
       helpfulCount: 14,
     },
     {
-      id: 'rev-2',
+      id: 'rev-seed-2',
       appId: 'default',
       userName: 'Rafiqul Islam',
       rating: 5,
@@ -42,7 +44,7 @@ const DEFAULT_REVIEWS: Record<string, UserReview[]> = {
       helpfulCount: 9,
     },
     {
-      id: 'rev-3',
+      id: 'rev-seed-3',
       appId: 'default',
       userName: 'Kazi Farhan',
       rating: 4,
@@ -58,7 +60,7 @@ const DEFAULT_REVIEWS: Record<string, UserReview[]> = {
 
 const REVIEWS_STORAGE_PREFIX = 'nexstore_reviews_';
 
-export function getAppReviews(appId: string): UserReview[] {
+export function getLocalReviews(appId: string): UserReview[] {
   if (typeof window === 'undefined') {
     return DEFAULT_REVIEWS.default.map((r) => ({ ...r, appId }));
   }
@@ -77,45 +79,161 @@ export function getAppReviews(appId: string): UserReview[] {
   }
 }
 
-export function saveAppReview(appId: string, review: Omit<UserReview, 'id' | 'createdAt' | 'helpfulCount'>): UserReview {
-  const newReview: UserReview = {
-    ...review,
-    id: `rev-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    createdAt: new Date().toISOString(),
-    helpfulCount: 0,
-  };
-
-  if (typeof window !== 'undefined') {
-    try {
-      const existing = getAppReviews(appId);
-      const updated = [newReview, ...existing];
-      localStorage.setItem(`${REVIEWS_STORAGE_PREFIX}${appId}`, JSON.stringify(updated));
-      window.dispatchEvent(new CustomEvent(`nexstore_review_added_${appId}`, { detail: { newReview } }));
-    } catch (err) {
-      console.error('Failed to save review:', err);
-    }
+export function saveLocalReview(appId: string, review: UserReview) {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = getLocalReviews(appId);
+    // Avoid duplicates
+    const filtered = existing.filter((r) => r.id !== review.id);
+    const updated = [review, ...filtered];
+    localStorage.setItem(`${REVIEWS_STORAGE_PREFIX}${appId}`, JSON.stringify(updated));
+  } catch (err) {
+    console.error('Failed to save review to localStorage:', err);
   }
-
-  return newReview;
 }
 
 export function useAppReviews(appId: string) {
-  const [reviews, setReviews] = useState<UserReview[]>(() => getAppReviews(appId));
+  const [reviews, setReviews] = useState<UserReview[]>(() => getLocalReviews(appId));
+  const [isLoading, setIsLoading] = useState(false);
 
-  const reload = useCallback(() => {
-    setReviews(getAppReviews(appId));
+  // Load real reviews from Supabase on mount
+  useEffect(() => {
+    if (!appId) return;
+    let isCancelled = false;
+
+    fetchAppReviewsFromSupabase(appId)
+      .then((dbReviews) => {
+        if (isCancelled) return;
+        if (dbReviews && dbReviews.length > 0) {
+          const mapped: UserReview[] = dbReviews.map((r) => ({
+            id: r.id,
+            appId: r.appId,
+            userName: r.userName,
+            rating: r.rating,
+            title: r.title || `${r.rating} Star Review`,
+            comment: r.comment,
+            createdAt: r.createdAt,
+            deviceModel: r.deviceModel,
+            verifiedDownload: r.verifiedDownload ?? true,
+            helpfulCount: r.helpfulCount || 0,
+          }));
+          setReviews(mapped);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`${REVIEWS_STORAGE_PREFIX}${appId}`, JSON.stringify(mapped));
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch reviews from Supabase directly, relying on cached store:', err);
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [appId]);
 
+  const reload = useCallback(() => {
+    if (!appId) return;
+    setIsLoading(true);
+    fetchAppReviewsFromSupabase(appId)
+      .then((dbReviews) => {
+        if (dbReviews && dbReviews.length > 0) {
+          const mapped: UserReview[] = dbReviews.map((r) => ({
+            id: r.id,
+            appId: r.appId,
+            userName: r.userName,
+            rating: r.rating,
+            title: r.title || `${r.rating} Star Review`,
+            comment: r.comment,
+            createdAt: r.createdAt,
+            deviceModel: r.deviceModel,
+            verifiedDownload: r.verifiedDownload ?? true,
+            helpfulCount: r.helpfulCount || 0,
+          }));
+          setReviews(mapped);
+        }
+      })
+      .finally(() => setIsLoading(false));
+  }, [appId]);
+
+  // Listen for local review events across tabs/components
   useEffect(() => {
-    const handleEvent = () => reload();
+    const handleEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ newReview: UserReview }>;
+      if (customEvent.detail?.newReview) {
+        setReviews((prev) => [customEvent.detail.newReview, ...prev.filter((r) => r.id !== customEvent.detail.newReview.id)]);
+      } else {
+        reload();
+      }
+    };
     window.addEventListener(`nexstore_review_added_${appId}`, handleEvent);
     return () => window.removeEventListener(`nexstore_review_added_${appId}`, handleEvent);
   }, [appId, reload]);
 
+  const addReview = async (review: Omit<UserReview, 'id' | 'createdAt' | 'helpfulCount'>) => {
+    const tempId = `rev-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const newReviewItem: UserReview = {
+      ...review,
+      id: tempId,
+      createdAt: new Date().toISOString(),
+      helpfulCount: 0,
+    };
+
+    // 1. Optimistic instant local update
+    setReviews((prev) => [newReviewItem, ...prev]);
+    saveLocalReview(appId, newReviewItem);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent(`nexstore_review_added_${appId}`, { detail: { newReview: newReviewItem } })
+      );
+    }
+
+    // 2. Persist to Supabase database via server action
+    try {
+      const res = await submitAppReviewAction({
+        appId,
+        userName: review.userName,
+        rating: review.rating,
+        title: review.title,
+        comment: review.comment,
+        deviceModel: review.deviceModel,
+      });
+
+      if (res && res.review) {
+        const confirmedReview: UserReview = {
+          id: res.review.id,
+          appId,
+          userName: res.review.userName,
+          rating: res.review.rating,
+          title: res.review.title || review.title,
+          comment: res.review.comment,
+          createdAt: res.review.createdAt,
+          deviceModel: res.review.deviceModel,
+          verifiedDownload: true,
+          helpfulCount: 0,
+        };
+        setReviews((prev) => [confirmedReview, ...prev.filter((r) => r.id !== tempId && r.id !== res.review?.id)]);
+        saveLocalReview(appId, confirmedReview);
+      }
+    } catch (err) {
+      console.error('Server action review submission failed, kept in local store:', err);
+    }
+
+    return newReviewItem;
+  };
+
   return {
     reviews,
+    isLoading,
     isLoaded: true,
-    addReview: (review: Omit<UserReview, 'id' | 'createdAt' | 'helpfulCount'>) => saveAppReview(appId, review),
-    reload,
+    addReview,
+    reload: loadFromDb,
   };
 }
+

@@ -18,6 +18,7 @@ import {
   Star,
   Check
 } from 'lucide-react';
+import { formatVersion } from '@/lib/supabase';
 
 export default function SubmitAppPage() {
   const [formData, setFormData] = useState({
@@ -100,7 +101,7 @@ export default function SubmitAppPage() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-text-secondary font-medium">Target Version:</span>
-              <span className="text-white">v{formData.latestVersion}</span>
+              <span className="text-white">{formatVersion(formData.latestVersion)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-text-secondary font-medium">Category:</span>

@@ -42,13 +42,13 @@ export function AppReviewsSection({ app }: { app: AppItem }) {
     ? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
     : app.rating || '5.0';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim() || !name.trim()) return;
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      addReview({
+    try {
+      await addReview({
         appId: app.id,
         userName: name.trim(),
         rating,
@@ -69,7 +69,10 @@ export function AppReviewsSection({ app }: { app: AppItem }) {
         setDeviceModel('');
         setRating(5);
       }, 1200);
-    }, 400);
+    } catch (err) {
+      console.error('Failed to post review:', err);
+      setIsSubmitting(false);
+    }
   };
 
   const toggleHelpful = (id: string) => {

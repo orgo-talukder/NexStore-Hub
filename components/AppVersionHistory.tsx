@@ -18,8 +18,9 @@ import {
   Copy,
   Check
 } from 'lucide-react';
-import { formatApkSize, type AppItem, type VersionItem } from '@/lib/supabase';
+import { formatApkSize, formatVersion, type AppItem, type VersionItem } from '@/lib/supabase';
 import { DownloadButton } from './DownloadButton';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface AppVersionHistoryProps {
   app: AppItem;
@@ -187,7 +188,7 @@ export function AppVersionHistory({ app, versions = [], error }: AppVersionHisto
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center flex-wrap gap-2">
                       <span className="font-outfit font-bold text-white text-base sm:text-lg">
-                        {version.versionName}
+                        {formatVersion(version.versionName)}
                       </span>
                       {isLatest && (
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-electric-blue text-white shadow-sm shadow-electric-blue/30">
@@ -233,7 +234,7 @@ export function AppVersionHistory({ app, versions = [], error }: AppVersionHisto
                   <DownloadButton
                     appId={app.id}
                     downloadUrl={version.apkUrl || app.apkUrl}
-                    label={`Download ${version.versionName}`}
+                    label={`Download ${formatVersion(version.versionName)}`}
                     size="sm"
                     className={`text-xs px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
                       isLatest
@@ -253,8 +254,10 @@ export function AppVersionHistory({ app, versions = [], error }: AppVersionHisto
                       <FileText className="w-3.5 h-3.5 text-electric-blue" />
                       <span>Release Notes &amp; Changes</span>
                     </h4>
-                    <div className="p-3.5 rounded-xl bg-deep-navy-solid border border-border-glass text-xs sm:text-sm text-text-secondary leading-relaxed space-y-1.5 whitespace-pre-line font-inter">
-                      {version.changelog || version.releaseNotes || 'General stability improvements and performance optimizations.'}
+                    <div className="p-3.5 sm:p-4 rounded-xl bg-deep-navy-solid border border-border-glass font-inter">
+                      <MarkdownRenderer 
+                        content={version.changelog || version.releaseNotes || 'General stability improvements and performance optimizations.'} 
+                      />
                     </div>
                   </div>
 
