@@ -219,11 +219,24 @@ export function MobileAppStoreView({
 
                 {/* Info */}
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-outfit font-bold text-white text-sm truncate group-hover:text-electric-blue transition-colors">
-                    {app.name}
-                  </h4>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <h4 className="font-outfit font-bold text-white text-sm truncate group-hover:text-electric-blue transition-colors">
+                      {app.name}
+                    </h4>
+                    {app.releaseChannel && (
+                      <span className={`text-[9px] font-bold font-mono px-1.5 py-0.2 rounded uppercase border shrink-0 ${
+                        app.releaseChannel.toLowerCase() === 'beta'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                          : app.releaseChannel.toLowerCase() === 'alpha'
+                          ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30'
+                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      }`}>
+                        {app.releaseChannel}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-text-muted capitalize truncate font-normal">
-                    {app.category ? app.category.replace(/-/g, ' ') : 'Productivity'} &bull; {app.rating} ★
+                    {app.category ? app.category.replace(/-/g, ' ') : 'Productivity'} &bull; {app.rating} ★ &bull; {app.apkSize || '29 MB'}
                   </p>
                 </div>
               </div>

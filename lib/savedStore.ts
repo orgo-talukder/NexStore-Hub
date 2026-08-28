@@ -25,8 +25,10 @@ function getSnapshot(): string[] {
   return memorySavedIds;
 }
 
+const EMPTY_SAVED_IDS: string[] = [];
+
 function getServerSnapshot(): string[] {
-  return [];
+  return EMPTY_SAVED_IDS;
 }
 
 const listeners = new Set<() => void>();

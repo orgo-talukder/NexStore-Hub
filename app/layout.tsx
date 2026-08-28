@@ -13,7 +13,13 @@ export const metadata: Metadata = {
   description: 'Enterprise-grade, premium application marketplace.',
   icons: {
     icon: 'https://i.ibb.co/LDsrNcxr/20260825-191156.png',
-  }
+    apple: 'https://i.ibb.co/LDsrNcxr/20260825-191156.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'NexStore',
+  },
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {

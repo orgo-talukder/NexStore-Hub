@@ -1,9 +1,10 @@
 import { getAppBySlugOrId, getAppVersions } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
-import { ShieldCheck, CheckCircle, Clock, Smartphone, Package, Tag, Layers } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Clock, Smartphone, Package, Tag, Layers, Sparkles } from 'lucide-react';
 import type { Metadata } from 'next';
 import { AppHeroDetail } from '@/components/AppHeroDetail';
 import { AppReviewsSection } from '@/components/AppReviewsSection';
+import { AppVersionHistory } from '@/components/AppVersionHistory';
 
 export const revalidate = 30;
 
@@ -48,7 +49,7 @@ export default async function AppDetailsPage({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* App Hero Details with Real Download Action */}
-      <AppHeroDetail app={app} />
+      <AppHeroDetail app={app} latestVersion={versions[0]} />
 
       {/* Screenshots Section (Only if screenshots are present in Supabase) */}
       {app.screenshots && app.screenshots.length > 0 && (
@@ -97,49 +98,19 @@ export default async function AppDetailsPage({
             </div>
           )}
           
-          {/* Version Changelog (From Supabase versions table or latest release note) */}
+          {/* What's New in Latest Release */}
           <div className="glass-panel rounded-2xl p-6 md:p-8 border border-border-glass">
-            <h2 className="text-xl font-outfit font-bold text-white mb-4">Version History & Changelog</h2>
-            
-            {versions.length > 0 ? (
-              <div className="space-y-6">
-                {versions.map((ver) => (
-                  <div key={ver.id} className="border-b border-border-glass/50 last:border-0 pb-4 last:pb-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-electric-blue text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                          v{ver.versionName}
-                        </span>
-                        {ver.versionCode && (
-                          <span className="text-text-muted text-xs font-mono">
-                            Build {ver.versionCode}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-text-muted text-xs">
-                        {new Date(ver.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-wrap">
-                      {ver.releaseNotes}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-electric-blue text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                    v{app.latestVersion}
-                  </span>
-                  <span className="text-text-muted text-xs">Latest Build</span>
-                </div>
-                <p className="text-text-secondary text-sm">
-                  Official release package verified and signed for the NexStore ecosystem.
-                </p>
-              </div>
-            )}
+            <h2 className="text-xl font-outfit font-bold text-white mb-4 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-electric-blue" />
+              <span>What&apos;s New in v{app.latestVersion}</span>
+            </h2>
+            <div className="p-4 rounded-xl bg-deep-navy-solid border border-border-glass text-text-secondary text-sm leading-relaxed whitespace-pre-wrap font-inter">
+              {versions[0]?.changelog || versions[0]?.releaseNotes || app.description ? `Latest official stable release with core architectural upgrades, performance optimizations, and security patches.` : 'Official release package verified and signed for the NexStore ecosystem.'}
+            </div>
           </div>
+          
+          {/* Version History & Previous APK Downloads */}
+          <AppVersionHistory app={app} versions={versions} />
         </div>
         
         {/* Sidebar Info */}

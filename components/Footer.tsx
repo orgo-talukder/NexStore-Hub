@@ -7,17 +7,18 @@ export function Footer() {
 
   return (
     <footer className="mt-16 sm:mt-20 border-t border-border-glass bg-deep-navy-solid">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* Main Footer Links - Visible on Desktop/Tablet, streamlined on Mobile */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 sm:mb-12">
           {/* Brand Info */}
-          <div className="space-y-4 md:col-span-1">
+          <div className="space-y-4 md:col-span-1 text-center sm:text-left">
             <Link href="/" className="inline-block group">
               <Image 
                 src="https://i.ibb.co/V05G0rcC/IMG-20260825-200138.png" 
                 alt="NexStore" 
                 width={140}
                 height={40}
-                className="h-8 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity" 
+                className="h-8 w-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity mx-auto sm:mx-0" 
                 referrerPolicy="no-referrer"
               />
             </Link>
@@ -26,8 +27,8 @@ export function Footer() {
             </p>
           </div>
           
-          {/* Ecosystem Navigation */}
-          <div>
+          {/* Desktop/Tablet Link Columns: Hidden on mobile since they are now in the mobile sidebar drawer */}
+          <div className="hidden md:block">
             <h3 className="font-outfit font-semibold text-white mb-3 sm:mb-4 text-sm sm:text-base">Ecosystem</h3>
             <ul className="space-y-2.5 text-xs sm:text-sm text-text-secondary font-inter">
               <li><Link href="/" className="hover:text-electric-blue transition-colors">Home Store</Link></li>
@@ -40,7 +41,7 @@ export function Footer() {
           </div>
 
           {/* Quick Discovery */}
-          <div>
+          <div className="hidden md:block">
             <h3 className="font-outfit font-semibold text-white mb-3 sm:mb-4 text-sm sm:text-base">Explore &amp; Admin</h3>
             <ul className="space-y-2.5 text-xs sm:text-sm text-text-secondary font-inter">
               <li><Link href="/apps?sort=popular" className="hover:text-electric-blue transition-colors">Top Downloads</Link></li>
@@ -52,7 +53,7 @@ export function Footer() {
           </div>
 
           {/* Trust & Safety */}
-          <div>
+          <div className="hidden md:block">
             <h3 className="font-outfit font-semibold text-white mb-3 sm:mb-4 text-sm sm:text-base">Trust &amp; Legal</h3>
             <ul className="space-y-2.5 text-xs sm:text-sm text-text-secondary font-inter">
               <li><Link href="/privacy-policy" className="hover:text-electric-blue transition-colors">Privacy Policy</Link></li>

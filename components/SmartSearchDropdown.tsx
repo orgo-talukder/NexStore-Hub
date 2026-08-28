@@ -171,6 +171,20 @@ export function SmartSearchDropdown({
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-muted">
                       <span className="capitalize">{app.category}</span>
+                      {app.releaseChannel && (
+                        <>
+                          <span>•</span>
+                          <span className={`uppercase font-mono font-bold px-1 rounded text-[9px] ${
+                            app.releaseChannel.toLowerCase() === 'beta'
+                              ? 'text-amber-400 bg-amber-500/10'
+                              : app.releaseChannel.toLowerCase() === 'alpha'
+                              ? 'text-fuchsia-400 bg-fuchsia-500/10'
+                              : 'text-emerald-400 bg-emerald-500/10'
+                          }`}>
+                            {app.releaseChannel}
+                          </span>
+                        </>
+                      )}
                       <span>•</span>
                       <span>{app.apkSize || 'APK'}</span>
                     </div>

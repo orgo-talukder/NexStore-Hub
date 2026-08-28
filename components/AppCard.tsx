@@ -83,13 +83,26 @@ export function AppCard({ app, rankBadge, featured }: AppCardProps) {
               <CheckCircle className="w-4 h-4 text-success-badge shrink-0" />
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="inline-block px-2.5 py-0.5 rounded-full bg-electric-blue/10 border border-electric-blue/20 text-electric-blue text-[11px] font-medium tracking-wide uppercase">
                 {app.category ? app.category.replace(/-/g, ' ') : 'General'}
               </span>
+              {app.releaseChannel && (
+                <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-full border uppercase ${
+                  app.releaseChannel.toLowerCase() === 'beta'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                    : app.releaseChannel.toLowerCase() === 'alpha'
+                    ? 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30'
+                    : app.releaseChannel.toLowerCase() === 'nightly'
+                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
+                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                }`}>
+                  {app.releaseChannel}
+                </span>
+              )}
               {app.latestVersion && (
                 <span className="text-[11px] text-text-muted font-mono bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
-                  v{app.latestVersion}
+                  v{app.latestVersion.replace(/^v/i, '')}
                 </span>
               )}
             </div>

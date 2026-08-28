@@ -28,6 +28,7 @@ export interface AppItem {
   slug: string;
   packageName: string;
   category: string;
+  categoryName?: string;
   shortDescription: string;
   description: string;
   features: string[];
@@ -42,6 +43,8 @@ export interface AppItem {
   rating: string;
   downloads: number;
   latestVersion: string;
+  releaseChannel?: 'stable' | 'beta' | 'alpha' | 'nightly' | string;
+  architecture?: string;
   apkSize: string;
   apkUrl: string;
   featured: boolean;
@@ -64,6 +67,7 @@ export interface BannerItem {
 export interface CategoryItem {
   id: string;
   name: string;
+  slug?: string;
   icon: string;
   displayOrder: number;
   enabled: boolean;
@@ -75,10 +79,90 @@ export interface VersionItem {
   appId: string;
   versionName: string;
   versionCode?: string | number;
+  apkUrl: string;
+  apkSizeBytes?: number;
+  apkSizeDisplay?: string;
+  minAndroidVersion?: string;
+  targetAndroidVersion?: string;
+  changelog?: string;
   releaseNotes: string;
-  apkUrl?: string | null;
-  apkSize?: string | null;
+  releaseChannel?: 'stable' | 'beta' | 'alpha' | 'nightly' | string;
+  architecture?: 'universal' | 'arm64-v8a' | 'armeabi-v7a' | 'x86_64' | string;
+  sha256?: string;
+  isLatest?: boolean;
+  status: 'published' | 'draft' | 'unpublished' | 'archived' | string;
+  publishedAt: string;
   createdAt: string;
+  updatedAt?: string;
+}
+
+/**
+ * Formats any raw size value (number, byte count, or string without unit like "29")
+ * into a clean, human-readable format with unit (e.g. "29 MB", "120 KB", "1.2 GB").
+ */
+export function formatApkSize(
+  rawSize?: unknown,
+  rawUnit?: unknown,
+  rawBytes?: unknown
+): string {
+  // If exact bytes given
+  if (typeof rawBytes === 'number' && rawBytes > 0 && (!rawSize || rawSize === '0' || rawSize === 0)) {
+    if (rawBytes >= 1024 * 1024 * 1024) {
+      return `${(rawBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+    }
+    if (rawBytes >= 1024 * 1024) {
+      return `${(rawBytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    if (rawBytes >= 1024) {
+      return `${(rawBytes / 1024).toFixed(0)} KB`;
+    }
+    return `${rawBytes} B`;
+  }
+
+  if (rawSize === undefined || rawSize === null || rawSize === '') {
+    return '25 MB';
+  }
+
+  const str = String(rawSize).trim();
+  if (!str || str === 'null' || str === 'undefined' || str === '0') {
+    return '25 MB';
+  }
+
+  // If already has unit e.g. "29 MB", "29MB", "150 KB", "1.2 GB"
+  const unitMatch = str.match(/^([\d.,]+)\s*([a-zA-Z]+)$/);
+  if (unitMatch) {
+    const num = unitMatch[1];
+    const unit = unitMatch[2].toUpperCase();
+    if (['B', 'KB', 'MB', 'GB', 'TB'].includes(unit)) {
+      return `${num} ${unit}`;
+    }
+  }
+
+  // If it's a pure number or numeric string (e.g. 29, "29", "29.5")
+  const numVal = parseFloat(str.replace(/,/g, ''));
+  if (!isNaN(numVal)) {
+    // If explicit unit was passed separately (e.g. from admin panel: size: 29, unit: "MB")
+    if (rawUnit && typeof rawUnit === 'string' && rawUnit.trim()) {
+      const u = rawUnit.trim().toUpperCase();
+      return `${numVal} ${u}`;
+    }
+
+    // If large byte number (e.g. 30408704)
+    if (numVal >= 1024 * 1024 * 1024) {
+      return `${(numVal / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+    }
+    if (numVal >= 1024 * 1024) {
+      return `${(numVal / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    if (numVal > 10000) {
+      return `${(numVal / 1024).toFixed(0)} KB`;
+    }
+
+    // Standard Android APK size unit is MB for typical small numbers (like 29)
+    return `${numVal} MB`;
+  }
+
+  return str;
 }
 
 /**
@@ -101,6 +185,11 @@ export function normalizeApp(raw: Record<string, unknown>): AppItem {
     return [];
   };
 
+  const rawSize = raw.apk_size || raw.apkSize || raw.size || raw.file_size;
+  const rawUnit = raw.apk_size_unit || raw.apkSizeUnit || raw.size_unit || raw.sizeUnit || raw.unit || raw.file_size_unit;
+  const rawBytes = raw.apk_size_bytes || raw.apkSizeBytes;
+  const formattedApkSize = formatApkSize(rawSize, rawUnit, rawBytes);
+
   return {
     id: String(raw.id || ''),
     name: String(raw.name || ''),
@@ -121,7 +210,9 @@ export function normalizeApp(raw: Record<string, unknown>): AppItem {
     rating: raw.rating !== undefined && raw.rating !== null ? String(raw.rating) : '5.0',
     downloads: Number(raw.downloads || 0),
     latestVersion: String(raw.latest_version || raw.latestVersion || raw.version || '1.0.0'),
-    apkSize: String(raw.apk_size || raw.apkSize || '25 MB'),
+    releaseChannel: (raw.release_channel as string) || (raw.releaseChannel as string) || (raw.channel as string) || undefined,
+    architecture: (raw.architecture as string) || (raw.arch as string) || undefined,
+    apkSize: formattedApkSize,
     apkUrl: String(raw.apk_url || raw.apkUrl || '#'),
     featured: Boolean(raw.featured ?? false),
     published: Boolean(raw.published ?? true),
@@ -150,9 +241,11 @@ export function normalizeBanner(raw: Record<string, unknown>): BannerItem {
  * Normalizes raw Supabase category
  */
 export function normalizeCategory(raw: Record<string, unknown>): CategoryItem {
+  const idStr = String(raw.id || raw.slug || '');
   return {
-    id: String(raw.id || raw.slug || '').toLowerCase(),
-    name: String(raw.name || ''),
+    id: idStr.toLowerCase(),
+    name: String(raw.name || idStr || ''),
+    slug: String(raw.slug || raw.id || '').toLowerCase(),
     icon: String(raw.icon || '📱'),
     displayOrder: Number(raw.display_order ?? raw.displayOrder ?? 0),
     enabled: Boolean(raw.enabled ?? true),
@@ -161,18 +254,42 @@ export function normalizeCategory(raw: Record<string, unknown>): CategoryItem {
 }
 
 /**
- * Normalizes raw Supabase version
+ * Normalizes raw Supabase version row (supports both app_versions and versions table schemas)
  */
 export function normalizeVersion(raw: Record<string, unknown>): VersionItem {
+  const vName = String(raw.version_name || raw.versionName || raw.version || '1.0.0');
+  const relNotes = String(
+    raw.changelog || raw.release_notes || raw.releaseNotes || raw.notes || 'Performance enhancements, security updates, and bug fixes.'
+  );
+  const rawSize = raw.apk_size_display || raw.apk_size || raw.apkSize || raw.size || raw.file_size;
+  const rawUnit = raw.apk_size_unit || raw.apkSizeUnit || raw.size_unit || raw.sizeUnit || raw.unit || raw.file_size_unit;
+  const rawBytes = raw.apk_size_bytes || raw.apkSizeBytes;
+  const sizeBytes = typeof rawBytes === 'number' ? rawBytes : undefined;
+  const sizeDisplay = formatApkSize(rawSize, rawUnit, sizeBytes);
+
+  const rawChannel = String(raw.release_channel || raw.releaseChannel || 'stable').toLowerCase();
+  const rawArch = String(raw.architecture || 'universal').toLowerCase();
+
   return {
     id: String(raw.id || ''),
     appId: String(raw.app_id || raw.appId || ''),
-    versionName: String(raw.version_name || raw.versionName || raw.version || '1.0.0'),
+    versionName: vName.startsWith('v') || vName.startsWith('V') ? vName : `v${vName}`,
     versionCode: (raw.version_code as string | number) || (raw.versionCode as string | number) || 1,
-    releaseNotes: String(raw.release_notes || raw.releaseNotes || raw.changelog || 'Performance improvements and bug fixes.'),
-    apkUrl: (raw.apk_url as string) || (raw.apkUrl as string) || null,
-    apkSize: (raw.apk_size as string) || (raw.apkSize as string) || null,
+    apkUrl: String(raw.apk_url || raw.apkUrl || '#'),
+    apkSizeBytes: sizeBytes,
+    apkSizeDisplay: sizeDisplay,
+    minAndroidVersion: String(raw.min_android_version || raw.min_android || raw.minAndroidVersion || raw.minAndroid || 'Android 8.0+'),
+    targetAndroidVersion: String(raw.target_android_version || raw.target_android || raw.targetAndroidVersion || 'Android 14'),
+    changelog: String(raw.changelog || relNotes),
+    releaseNotes: relNotes,
+    releaseChannel: rawChannel,
+    architecture: rawArch,
+    sha256: (raw.sha256 as string) || undefined,
+    isLatest: Boolean(raw.is_latest ?? raw.isLatest ?? false),
+    status: String(raw.status || 'published').toLowerCase(),
+    publishedAt: String(raw.published_at || raw.publishedAt || raw.created_at || raw.createdAt || new Date().toISOString()),
     createdAt: String(raw.created_at || raw.createdAt || new Date().toISOString()),
+    updatedAt: (raw.updated_at as string) || (raw.updatedAt as string) || undefined,
   };
 }
 
@@ -368,9 +485,20 @@ export async function getHomePageData() {
 
     // Dynamic category highlights (up to 4 categories)
     const categoryHighlights = categories.slice(0, 4).map((cat) => {
-      const catLower = cat.id.toLowerCase().trim();
+      const catId = cat.id.toLowerCase().trim();
+      const catName = cat.name.toLowerCase().trim();
+      const catSlug = (cat.slug || '').toLowerCase().trim();
       const apps = allApps
-        .filter((a) => (a.category || '').toLowerCase().trim() === catLower)
+        .filter((a) => {
+          const appCat = (a.category || '').toLowerCase().trim();
+          return (
+            appCat === catId ||
+            appCat === catName ||
+            (catSlug && appCat === catSlug) ||
+            appCat.includes(catName) ||
+            (catName && appCat.includes(catName))
+          );
+        })
         .slice(0, 3);
       return { category: cat, apps };
     });
@@ -406,7 +534,9 @@ export async function getAllApps({
       .eq('published', true);
 
     if (category && category.trim() !== '') {
-      query = query.ilike('category', category.trim());
+      const catTrim = category.trim();
+      // Match category UUID, slug or exact string
+      query = query.or(`category.eq.${catTrim},category.ilike.%${catTrim}%`);
     }
 
     if (search && search.trim() !== '') {
@@ -493,23 +623,53 @@ export async function getAppBySlugOrId(idOrSlug: string): Promise<AppItem | null
 }
 
 /**
- * Fetch version history and release notes from versions table
+ * Fetch published version history from app_versions table (with graceful fallback to versions table)
  */
 export async function getAppVersions(appId: string): Promise<VersionItem[]> {
   if (!appId) return [];
 
-  return cachedFetch(`versions:${appId}`, async () => {
+  return cachedFetch(`app_versions:${appId}`, async () => {
     try {
-      const { data, error } = await supabase
+      // 1. Primary query: shared app_versions table (status = published, order by published_at DESC)
+      const { data: appVers, error: appVersErr } = await supabase
+        .from('app_versions')
+        .select('*')
+        .eq('app_id', appId)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false });
+
+      if (!appVersErr && appVers && appVers.length > 0) {
+        return appVers.map(normalizeVersion);
+      }
+
+      // 2. Secondary fallback: check if app_versions has rows without status filter (for backwards compatibility)
+      const { data: rawAppVers } = await supabase
+        .from('app_versions')
+        .select('*')
+        .eq('app_id', appId)
+        .order('created_at', { ascending: false });
+
+      if (rawAppVers && rawAppVers.length > 0) {
+        const filtered = rawAppVers.filter(
+          (v) => !v.status || v.status === 'published' || v.status === 'active'
+        );
+        if (filtered.length > 0) {
+          return filtered.map(normalizeVersion);
+        }
+      }
+
+      // 3. Fallback to legacy 'versions' table
+      const { data: legacyVersions, error: legacyErr } = await supabase
         .from('versions')
         .select('*')
         .eq('app_id', appId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        return [];
+      if (!legacyErr && legacyVersions && legacyVersions.length > 0) {
+        return legacyVersions.map(normalizeVersion);
       }
-      return (data || []).map(normalizeVersion);
+
+      return [];
     } catch (err) {
       console.error('Error in getAppVersions:', err);
       return [];
@@ -580,13 +740,25 @@ export async function getCategoriesWithCounts(): Promise<CategoryItem[]> {
 
     const countMap: Record<string, number> = {};
     for (const app of apps) {
-      const cat = (app.category || 'general').toLowerCase();
-      countMap[cat] = (countMap[cat] || 0) + 1;
+      const appCat = (app.category || 'general').toLowerCase().trim();
+      for (const cat of categories) {
+        const catId = cat.id.toLowerCase().trim();
+        const catName = cat.name.toLowerCase().trim();
+        const catSlug = (cat.slug || '').toLowerCase().trim();
+        if (
+          appCat === catId ||
+          appCat === catName ||
+          (catSlug && appCat === catSlug) ||
+          appCat.includes(catName)
+        ) {
+          countMap[cat.id] = (countMap[cat.id] || 0) + 1;
+        }
+      }
     }
 
     return categories.map((cat) => ({
       ...cat,
-      appCount: countMap[cat.id.toLowerCase()] || 0,
+      appCount: countMap[cat.id] || 0,
     }));
   } catch (err) {
     console.error('Error in getCategoriesWithCounts:', err);
