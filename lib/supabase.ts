@@ -303,7 +303,7 @@ interface CacheEntry<T> {
 }
 
 const memoryCache = new Map<string, CacheEntry<unknown>>();
-const DEFAULT_TTL_MS = 45 * 1000; // 45 seconds cache for blazing fast responses
+const DEFAULT_TTL_MS = 5 * 1000; // 5 seconds cache for real-time responsiveness
 
 async function cachedFetch<T>(
   key: string,
@@ -438,6 +438,20 @@ export async function getAppsByCategory(category: string, limit = 6): Promise<Ap
 }
 
 /**
+ * Helper to check if a raw app record is publicly visible
+ */
+function isAppVisible(raw: Record<string, unknown>): boolean {
+  if (raw.published === false || raw.is_published === false) {
+    return false;
+  }
+  const status = String(raw.status || '').toLowerCase().trim();
+  if (status === 'draft' || status === 'unpublished' || status === 'archived') {
+    return false;
+  }
+  return true;
+}
+
+/**
  * Fetch all published apps with internal cache (single source of truth for high speed)
  */
 export async function getAllPublishedApps(): Promise<AppItem[]> {
@@ -446,19 +460,19 @@ export async function getAllPublishedApps(): Promise<AppItem[]> {
       const { data, error } = await supabase
         .from('apps')
         .select('*')
-        .eq('published', true)
         .order('downloads', { ascending: false });
 
       if (error) {
         console.error('Supabase getAllPublishedApps error:', error.message);
         return [];
       }
-      return (data || []).map(normalizeApp);
+      const visibleData = (data || []).filter(isAppVisible);
+      return visibleData.map(normalizeApp);
     } catch (err) {
       console.error('Error in getAllPublishedApps:', err);
       return [];
     }
-  });
+  }, 5 * 1000);
 }
 
 /**
@@ -512,7 +526,7 @@ export async function getHomePageData() {
       spotlightApps: spotlightApps.length > 0 ? spotlightApps : topApps.slice(0, 6),
       categoryHighlights,
     };
-  }, 30 * 1000);
+  }, 5 * 1000);
 }
 
 /**
@@ -530,8 +544,7 @@ export async function getAllApps({
   try {
     let query = supabase
       .from('apps')
-      .select('*')
-      .eq('published', true);
+      .select('*');
 
     if (category && category.trim() !== '') {
       const catTrim = category.trim();
@@ -565,7 +578,8 @@ export async function getAllApps({
       console.error('Supabase getAllApps error:', error.message);
       return [];
     }
-    return (data || []).map(normalizeApp);
+    const visible = (data || []).filter(isAppVisible);
+    return visible.map(normalizeApp);
   } catch (err) {
     console.error('Error in getAllApps:', err);
     return [];
@@ -595,10 +609,9 @@ export async function getAppBySlugOrId(idOrSlug: string): Promise<AppItem | null
         .from('apps')
         .select('*')
         .eq('slug', idOrSlug)
-        .eq('published', true)
         .limit(1);
 
-      if (slugData && slugData.length > 0) {
+      if (slugData && slugData.length > 0 && isAppVisible(slugData[0])) {
         return normalizeApp(slugData[0]);
       }
 
@@ -607,10 +620,9 @@ export async function getAppBySlugOrId(idOrSlug: string): Promise<AppItem | null
         .from('apps')
         .select('*')
         .or(`id.eq.${idOrSlug},package_name.eq.${idOrSlug}`)
-        .eq('published', true)
         .limit(1);
 
-      if (error || !idData || idData.length === 0) {
+      if (error || !idData || idData.length === 0 || !isAppVisible(idData[0])) {
         return null;
       }
 
@@ -619,7 +631,7 @@ export async function getAppBySlugOrId(idOrSlug: string): Promise<AppItem | null
       console.error('Error in getAppBySlugOrId:', err);
       return null;
     }
-  });
+  }, 5 * 1000);
 }
 
 /**

@@ -9,8 +9,9 @@ import { MobileAppStoreView } from '@/components/MobileAppStoreView';
 import { EmptyState } from '@/components/Skeletons';
 import { Flame, Sparkles, Clock, Layers, ArrowRight } from 'lucide-react';
 
-// Revalidate page in background every 30 seconds for lightning fast sub-millisecond responses
-export const revalidate = 30;
+// Always fetch live data on request for real-time updates
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function HomePage() {
   const {
