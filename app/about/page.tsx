@@ -496,7 +496,7 @@ export default function AboutPage() {
           Lead Architect &amp; Creator
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl sm:text-4xl font-outfit font-extrabold text-white flex items-center justify-center gap-2">
+          <h2 className="text-2xl sm:text-4xl font-outfit font-extrabold text-white flex flex-col md:flex-row items-center justify-center gap-2 md:gap-3 text-center">
             <span>Crafted &amp; Visioned by</span>
             <ArgoTalukderText size="3xl" showGlow showSparkle subtext="Pro" />
           </h2>
@@ -510,11 +510,11 @@ export default function AboutPage() {
       <section className="text-center pt-8 border-t border-border-glass/40 text-xs sm:text-sm text-text-muted space-y-2 font-inter">
         <p>© {currentYear} NexStore. All rights reserved.</p>
         <p className="text-text-secondary font-medium">NexStore is part of the Nex ecosystem.</p>
-        <div className="pt-2 flex items-center justify-center">
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/[0.03] border border-white/10 text-xs sm:text-sm font-outfit font-medium text-white/90 shadow-sm backdrop-blur-md">
-            <span>Designed &amp; Engineered with</span>
+        <div className="pt-3 flex items-center justify-center px-2">
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 px-4 sm:px-5 py-2 rounded-2xl sm:rounded-full bg-white/[0.04] border border-white/10 text-xs sm:text-sm font-outfit font-medium text-white/90 shadow-md backdrop-blur-md text-center max-w-full">
+            <span className="whitespace-nowrap">Designed &amp; Engineered with</span>
             <span className="text-rose-500 inline-block animate-pulse">❤️</span>
-            <span>by</span>
+            <span className="whitespace-nowrap">by</span>
             <ArgoTalukderText size="sm" showGlow showSparkle />
           </div>
         </div>

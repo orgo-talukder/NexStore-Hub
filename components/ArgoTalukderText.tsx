@@ -32,28 +32,23 @@ export function ArgoTalukderText({
   const nameLetters = "Argo Talukder".split("");
 
   return (
-    <span className={`inline-flex items-center gap-1.5 relative group cursor-pointer select-none ${className}`}>
-      {/* Background Animated Glow Halo */}
-      {showGlow && (
-        <span className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-electric-blue via-cyber-purple via-pink-500 to-amber-400 opacity-30 blur-lg group-hover:opacity-75 transition-opacity duration-500 animate-gradient-flow pointer-events-none" />
-      )}
-
+    <span className={`inline-flex items-center gap-1.5 relative group cursor-pointer select-none whitespace-nowrap ${className}`}>
       {/* Main Animated Text Unit */}
       <motion.span
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.98 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-        className={`relative z-10 font-outfit font-extrabold tracking-tight ${sizeClasses[size]} inline-flex items-center overflow-hidden py-0.5`}
+        className={`relative z-10 font-outfit font-extrabold tracking-tight ${sizeClasses[size]} inline-flex items-center overflow-hidden py-0.5 whitespace-nowrap`}
       >
-        {/* Animated Multi-color Fluid Gradient Text */}
-        <span className="text-transparent bg-clip-text bg-[length:300%_300%] bg-gradient-to-r from-electric-blue via-sky-300 via-cyber-purple via-rose-500 via-amber-400 via-emerald-400 to-electric-blue animate-gradient-flow drop-shadow-[0_2px_12px_rgba(59,130,246,0.35)] flex items-center">
+        {/* Solid Color Shift Text */}
+        <span className="animate-soft-color-shift inline-flex items-center whitespace-nowrap">
           {nameLetters.map((char, index) => (
             <motion.span
               key={index}
               initial={{ y: 0 }}
               whileHover={{ y: -3, scale: 1.15 }}
               transition={{ type: 'spring', stiffness: 500, damping: 18 }}
-              className="inline-block transition-transform"
+              className="inline-block transition-transform whitespace-pre"
             >
               {char === " " ? "\u00A0" : char}
             </motion.span>

@@ -89,11 +89,11 @@ export function Footer() {
         <div className="pt-6 sm:pt-8 border-t border-border-glass text-center text-xs text-text-muted font-inter space-y-2">
           <p>&copy; {currentYear} NexStore. All rights reserved.</p>
           <p className="text-text-secondary">NexStore is the official application marketplace for the Nex ecosystem.</p>
-          <div className="pt-2 flex items-center justify-center">
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/[0.03] border border-white/10 text-xs sm:text-sm font-outfit font-medium text-white/90 shadow-md backdrop-blur-md">
-              <span>Designed &amp; Engineered with</span>
+          <div className="pt-3 flex items-center justify-center px-2">
+            <div className="inline-flex flex-wrap items-center justify-center gap-2 px-4 sm:px-5 py-2 rounded-2xl sm:rounded-full bg-white/[0.04] border border-white/10 text-xs sm:text-sm font-outfit font-medium text-white/90 shadow-md backdrop-blur-md text-center max-w-full">
+              <span className="whitespace-nowrap">Designed &amp; Engineered with</span>
               <span className="text-rose-500 inline-block animate-pulse">❤️</span>
-              <span>by</span>
+              <span className="whitespace-nowrap">by</span>
               <ArgoTalukderText size="sm" showGlow showSparkle />
             </div>
           </div>

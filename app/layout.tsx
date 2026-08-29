@@ -3,7 +3,6 @@ import { Inter, Outfit } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { BottomNav } from '@/components/BottomNav';
 import { TopProgressBar } from '@/components/TopProgressBar';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -32,11 +31,10 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
       <body className="antialiased min-h-screen flex flex-col bg-cosmic-obsidian text-text-primary selection:bg-electric-blue selection:text-white" suppressHydrationWarning>
         <TopProgressBar />
         <Navbar />
-        <main className="flex-grow pt-16 sm:pt-20 pb-16 md:pb-0">
+        <main className="flex-grow pt-16 sm:pt-20">
           {children}
         </main>
         <Footer />
-        <BottomNav />
       </body>
     </html>
   );
