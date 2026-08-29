@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { ArgoTalukderText } from '@/components/ArgoTalukderText';
 import { 
   Compass, 
   Layers, 
@@ -488,10 +489,35 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* 11. Lead Creator & Architect Section */}
+      <section className="glass-panel rounded-3xl p-8 sm:p-10 border border-electric-blue/30 bg-gradient-to-br from-[#0c1329] via-cosmic-obsidian to-[#120d2b] relative overflow-hidden text-center space-y-4">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-32 bg-gradient-to-r from-electric-blue/20 via-cyber-purple/20 to-rose-500/20 blur-3xl rounded-full pointer-events-none" />
+        <div className="inline-block px-3.5 py-1 rounded-full bg-white/[0.05] border border-white/10 text-xs font-mono font-semibold uppercase tracking-wider text-sky-300">
+          Lead Architect &amp; Creator
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl sm:text-4xl font-outfit font-extrabold text-white flex items-center justify-center gap-2">
+            <span>Crafted &amp; Visioned by</span>
+            <ArgoTalukderText size="3xl" showGlow showSparkle subtext="Pro" />
+          </h2>
+          <p className="max-w-xl mx-auto text-sm sm:text-base text-text-secondary leading-relaxed font-inter">
+            Building next-generation digital experiences for the Nex ecosystem with seamless performance, high-frequency design principles, and zero compromise.
+          </p>
+        </div>
+      </section>
+
       {/* Footer Statement */}
-      <section className="text-center pt-8 border-t border-border-glass/40 text-xs sm:text-sm text-text-muted space-y-1 font-inter">
+      <section className="text-center pt-8 border-t border-border-glass/40 text-xs sm:text-sm text-text-muted space-y-2 font-inter">
         <p>© {currentYear} NexStore. All rights reserved.</p>
         <p className="text-text-secondary font-medium">NexStore is part of the Nex ecosystem.</p>
+        <div className="pt-2 flex items-center justify-center">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/[0.03] border border-white/10 text-xs sm:text-sm font-outfit font-medium text-white/90 shadow-sm backdrop-blur-md">
+            <span>Designed &amp; Engineered with</span>
+            <span className="text-rose-500 inline-block animate-pulse">❤️</span>
+            <span>by</span>
+            <ArgoTalukderText size="sm" showGlow showSparkle />
+          </div>
+        </div>
       </section>
 
     </div>

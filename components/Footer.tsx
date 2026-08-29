@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, Server, RefreshCw, Zap, Bookmark, UploadCloud } from 'lucide-react';
+import { ShieldCheck, Server, RefreshCw, Zap } from 'lucide-react';
+import { ArgoTalukderText } from '@/components/ArgoTalukderText';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -85,9 +86,17 @@ export function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="pt-6 sm:pt-8 border-t border-border-glass text-center text-xs text-text-muted font-inter space-y-1">
+        <div className="pt-6 sm:pt-8 border-t border-border-glass text-center text-xs text-text-muted font-inter space-y-2">
           <p>&copy; {currentYear} NexStore. All rights reserved.</p>
           <p className="text-text-secondary">NexStore is the official application marketplace for the Nex ecosystem.</p>
+          <div className="pt-2 flex items-center justify-center">
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/[0.03] border border-white/10 text-xs sm:text-sm font-outfit font-medium text-white/90 shadow-md backdrop-blur-md">
+              <span>Designed &amp; Engineered with</span>
+              <span className="text-rose-500 inline-block animate-pulse">❤️</span>
+              <span>by</span>
+              <ArgoTalukderText size="sm" showGlow showSparkle />
+            </div>
+          </div>
         </div>
       </div>
     </footer>

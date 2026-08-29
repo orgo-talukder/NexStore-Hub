@@ -233,7 +233,7 @@ export function useAppReviews(appId: string) {
     isLoading,
     isLoaded: true,
     addReview,
-    reload: loadFromDb,
+    reload,
   };
 }
 

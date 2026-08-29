@@ -94,3 +94,34 @@
     transform: translateX(100%);
   }
 }
+
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.6)) drop-shadow(0 0 20px rgba(139, 92, 246, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(236, 72, 153, 0.7)) drop-shadow(0 0 25px rgba(16, 185, 129, 0.5));
+  }
+}
+
+.animate-gradient-flow {
+  background-size: 300% 300%;
+  animation: gradient-flow 6s ease infinite;
+}
+
+.animate-text-glow {
+  animation: pulse-glow 5s ease-in-out infinite;
+}
+

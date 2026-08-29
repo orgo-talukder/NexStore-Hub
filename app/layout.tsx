@@ -12,6 +12,9 @@ const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 export const metadata: Metadata = {
   title: 'NexStore — Official First-Party App Ecosystem',
   description: 'Enterprise-grade, premium application marketplace.',
+  authors: [{ name: 'Argo Talukder' }],
+  creator: 'Argo Talukder',
+  publisher: 'Argo Talukder',
   icons: {
     icon: 'https://i.ibb.co/LDsrNcxr/20260825-191156.png',
     apple: 'https://i.ibb.co/LDsrNcxr/20260825-191156.png',
